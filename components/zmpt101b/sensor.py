@@ -2,10 +2,18 @@ import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome import pins
 from esphome.components import sensor
-from esphome.const import CONF_SENSOR, CONF_ID, CONF_PIN, ICON_PULSE, UNIT_VOLT, CONF_CALIBRATION, CONF_FREQUENCY 
+from esphome.const import {
+    CONF_SENSOR,
+    CONF_ID,
+    CONF_PIN,
+    ICON_PULSE,
+    UNIT_VOLT,
+    CONF_CALIBRATION,
+    CONF_FREQUENCY
+}
 
 
-CODEOWNERS = ['@sourabhjaiswal']
+CODEOWNERS = ['@sourabhjaiswal/pautovartem']
 CONF_PHASE_SHIFT = 'phase_shift'
 CONF_NUMBER_OF_SAMPLES = 'num_of_samples'
 
@@ -22,9 +30,17 @@ def validate_adc_pin(value):
 
 
 
-ZMPT101BSensor = cg.global_ns.class_('ZMPT101BSensor', sensor.Sensor, cg.PollingComponent)
+zmpt101b_ns = cg.esphome_ns.namespace('zmpt101b')
+ZMPT101BSensor = zmpt101b_ns.class_('ZMPT101BSensor', sensor.Sensor, cg.PollingComponent)
 
-CONFIG_SCHEMA = sensor.sensor_schema(UNIT_VOLT, ICON_PULSE, 2).extend({
+CONFIG_SCHEMA = sensor.sensor_schema(
+    ZMPT101BSensor,
+    unit_of_measurement=UNIT_VOLT,
+    icon=ICON_PULSE,
+    accuracy_decimals=2,
+    device_class=DEVICE_CLASS_VOLTAGE,
+    state_class=STATE_CLASS_MEASUREMENT
+    ).extend({
     cv.GenerateID(): cv.declare_id(ZMPT101BSensor),
     cv.Required(CONF_PIN): validate_adc_pin,
     cv.Optional(CONF_CALIBRATION, default=84): cv.float_,
@@ -37,7 +53,7 @@ CONFIG_SCHEMA = sensor.sensor_schema(UNIT_VOLT, ICON_PULSE, 2).extend({
 async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
-    await sensor.register_sensor(var, config)
+    # await sensor.register_sensor(var, config)
     cg.add_library('EmonLib', None)
     pin = await cg.gpio_pin_expression(config[CONF_PIN])
     cg.add(var.set_pin(pin))
