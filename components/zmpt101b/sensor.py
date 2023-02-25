@@ -12,8 +12,6 @@ from esphome.const import {
     CONF_FREQUENCY
 }
 
-
-CODEOWNERS = ['@sourabhjaiswal/pautovartem']
 CONF_PHASE_SHIFT = 'phase_shift'
 CONF_NUMBER_OF_SAMPLES = 'num_of_samples'
 
@@ -28,8 +26,6 @@ def validate_adc_pin(value):
         return cv.only_on_esp8266(vcc)
     return pins.internal_gpio_input_pin_schema(value)
 
-
-
 zmpt101b_ns = cg.esphome_ns.namespace('zmpt101b')
 ZMPT101BSensor = zmpt101b_ns.class_('ZMPT101BSensor', sensor.Sensor, cg.PollingComponent)
 
@@ -40,20 +36,22 @@ CONFIG_SCHEMA = sensor.sensor_schema(
     accuracy_decimals=2,
     device_class=DEVICE_CLASS_VOLTAGE,
     state_class=STATE_CLASS_MEASUREMENT
-    ).extend({
-    cv.GenerateID(): cv.declare_id(ZMPT101BSensor),
-    cv.Required(CONF_PIN): validate_adc_pin,
-    cv.Optional(CONF_CALIBRATION, default=84): cv.float_,
-    cv.Optional(CONF_NUMBER_OF_SAMPLES, default='20'): cv.int_,
-    cv.Optional(CONF_FREQUENCY, default='50hz'): cv.enum(FREQUENCY_OPTIONS),
-    cv.Optional(CONF_PHASE_SHIFT, default=1.7): cv.float_,
-}).extend(cv.polling_component_schema('60s'))
+    )
+    .extend({
+        cv.GenerateID(): cv.declare_id(ZMPT101BSensor),
+        cv.Required(CONF_PIN): validate_adc_pin,
+        cv.Optional(CONF_CALIBRATION, default=84): cv.float_,
+        cv.Optional(CONF_NUMBER_OF_SAMPLES, default='20'): cv.int_,
+        cv.Optional(CONF_FREQUENCY, default='50hz'): cv.enum(FREQUENCY_OPTIONS),
+        cv.Optional(CONF_PHASE_SHIFT, default=1.7): cv.float_,
+    })
+    .extend(cv.polling_component_schema('60s'))
 
 
 async def to_code(config):
-    var = cg.new_Pvariable(config[CONF_ID])
+    var = await sensor.register_sensor(config)
     await cg.register_component(var, config)
-    await sensor.register_sensor(var, config)
+
     cg.add_library('EmonLib', None)
     pin = await cg.gpio_pin_expression(config[CONF_PIN])
     cg.add(var.set_pin(pin))
